@@ -79,13 +79,13 @@ public class PointsResource {
 		
 		try {
 			LeafReader reader = readerManager.getLeafReader(segment);
-			PointValues points = reader.getPointValues();
+			PointValues points = reader.getPointValues(field);
 	        if (points == null) {
 				throw new WebApplicationException("No points data for field", Response.Status.NOT_FOUND);
 	        }
 	
-	        final int numDims = points.getNumDimensions(field);
-	        final int bytesPerDim = points.getBytesPerDimension(field);
+	        final int numDims = points.getNumDimensions();
+	        final int bytesPerDim = points.getBytesPerDimension();
 	        checkEncoding(encoding, bytesPerDim);
 	
 	        BKDNode rootNode = buildBKDTree(points, field, numDims, bytesPerDim, encoding);
@@ -110,10 +110,10 @@ public class PointsResource {
 		}
 
         LeafReader reader = readerManager.getLeafReader(segment);
-        PointValues points = reader.getPointValues();
+        PointValues points = reader.getPointValues(field);
 
-        final int numDims = points.getNumDimensions(field);
-        final int bytesPerDim = points.getBytesPerDimension(field);
+        final int numDims = points.getNumDimensions();
+        final int bytesPerDim = points.getBytesPerDimension();
         if (bytesPerDim != 4 && bytesPerDim != 8) {
             String msg = String.format("Points data for field %s has %d bytes per dimension",
                     field, bytesPerDim);
@@ -128,7 +128,7 @@ public class PointsResource {
 
         final List values = new ArrayList<Value>(1024);
 
-        points.intersect(field, new PointValues.IntersectVisitor() {
+        points.intersect(new PointValues.IntersectVisitor() {
 
             @Override
             public void visit(int docID) throws IOException {
@@ -185,7 +185,7 @@ public class PointsResource {
 		BKDNode[] currentNode = new BKDNode[1];
 		BKDNode[] rootNode = new BKDNode[1];
 
-		points.intersect(field, new PointValues.IntersectVisitor() {
+		points.intersect(new PointValues.IntersectVisitor() {
 
 			@Override
 			public void visit(int docID) throws IOException {

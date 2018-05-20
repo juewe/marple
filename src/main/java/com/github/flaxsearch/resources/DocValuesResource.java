@@ -77,7 +77,9 @@ public class DocValuesResource {
 	            BinaryDocValues dv = readerManager.getBinaryDocValues(segment, field);
 	            Map<Integer,String> values = new HashMap<>(docset.size());
 	            for (int docid : docset) {
-	                values.put(docid, BytesRefUtils.encode(dv.get(docid), encoding));
+	            	if (dv.advanceExact(docid)) {
+	            		values.put(docid, BytesRefUtils.encode(dv.binaryValue(), encoding));
+	            	}
 	            }
 	            response = new AnyDocValuesResponse("BINARY", values);
 	        }
@@ -85,7 +87,9 @@ public class DocValuesResource {
 	            NumericDocValues dv = readerManager.getNumericDocValues(segment, field);
 	            Map<Integer,Long> values = new HashMap<>(docset.size());
 	            for (int docid : docset) {
-	                values.put(docid, dv.get(docid));
+	            	if (dv.advanceExact(docid)) {
+	            	    values.put(docid, dv.longValue());
+	            	}
 	            }
 	            response = new AnyDocValuesResponse("NUMERIC", values);
 	        }
@@ -93,10 +97,10 @@ public class DocValuesResource {
 	            SortedNumericDocValues dv = readerManager.getSortedNumericDocValues(segment, field);
 	            Map<Integer,List<Long>> values = new HashMap<>(docset.size());
 	            for (int docid : docset) {
-	                dv.setDocument(docid);
-	                List<Long> perDocValues = new ArrayList<>(dv.count());
-	                for (int index = 0; index < dv.count(); ++index) {
-	                    perDocValues.add(dv.valueAt(index));
+	                dv.advanceExact(docid);
+	                List<Long> perDocValues = new ArrayList<>(dv.docValueCount());
+	                for (int index = 0; index < dv.docValueCount(); ++index) {
+	                    perDocValues.add(dv.nextValue());
 	                }
 	                values.put(docid, perDocValues);
 	            }
@@ -106,7 +110,9 @@ public class DocValuesResource {
 	            SortedDocValues dv = readerManager.getSortedDocValues(segment, field);
 	            Map<Integer,ValueWithOrd> values = new HashMap<>(docset.size());
 	            for (int docid : docset) {
-	                values.put(docid, new ValueWithOrd(BytesRefUtils.encode(dv.get(docid), encoding), dv.getOrd(docid)));
+	            	if (dv.advanceExact(docid)) {
+	            	    values.put(docid, new ValueWithOrd(BytesRefUtils.encode(dv.binaryValue(), encoding), dv.ordValue()));
+	            	}
 	            }
 	            response = new AnyDocValuesResponse("SORTED", values);
 	        }
@@ -114,7 +120,7 @@ public class DocValuesResource {
 	            SortedSetDocValues dv = readerManager.getSortedSetDocValues(segment, field);
 	            Map<Integer,List<ValueWithOrd>> values = new HashMap<>(docset.size());
 	            for (int docid : docset) {
-	                dv.setDocument(docid);
+	                dv.advanceExact(docid);
 	                List<ValueWithOrd> perDocValues = new ArrayList<>((int)dv.getValueCount());
 	                long ord;
 	                while ((ord = dv.nextOrd()) != SortedSetDocValues.NO_MORE_ORDS) {
@@ -144,7 +150,7 @@ public class DocValuesResource {
             										@QueryParam("offset") Integer offset,
             										@QueryParam("count") @DefaultValue("50") int count,
             										@QueryParam("filter") String filter,
-            										@QueryParam("encoding") @DefaultValue("utf8") String encoding) 
+            										@QueryParam("encoding") @DefaultValue("utf8") String encoding)
     												throws IOException {
 
     	if (startTerm != null) {
@@ -152,15 +158,15 @@ public class DocValuesResource {
         		throw new WebApplicationException("Cannot have both 'from' and 'offset' parameters", Response.Status.FORBIDDEN);
         	}
         	if (filter != null) {
-        		throw new WebApplicationException("Cannot have both 'from' and 'filter' parameters", Response.Status.FORBIDDEN);        		
+        		throw new WebApplicationException("Cannot have both 'from' and 'filter' parameters", Response.Status.FORBIDDEN);
         	}
     	}
-    	
+
         FieldInfo fieldInfo = readerManager.getFieldInfo(segment, field);
 
         if (fieldInfo == null) {
             String msg = String.format("No such field %s", field);
-            throw new WebApplicationException(msg, Response.Status.NOT_FOUND);    		
+            throw new WebApplicationException(msg, Response.Status.NOT_FOUND);
         }
 
         try {
@@ -172,8 +178,8 @@ public class DocValuesResource {
             	if (filter != null && filter.length() > 0) {
     	            te = readerManager.getSortedDocValues(segment, field).intersect(
     	            		new CompiledAutomaton(new RegExp(filter).toAutomaton()));
-            		
-            	} 
+
+            	}
             	else {
             		te = readerManager.getSortedDocValues(segment, field).termsEnum();
             	}
@@ -192,11 +198,11 @@ public class DocValuesResource {
 	        else {
 	        	throw new WebApplicationException("Field " + field + " cannot be viewed in value order", Response.Status.BAD_REQUEST);
 	        }
-            
+
 	        List<ValueWithOrd> collected = new ArrayList<>();
 
             if (startTerm != null) {
-                BytesRef start = BytesRefUtils.decode(startTerm, encoding);
+                BytesRef start = new BytesRef(startTerm);
                 if (te.seekCeil(start) == TermsEnum.SeekStatus.END)
                     return new AnyDocValuesResponse(type_s, collected);
             } else {
@@ -221,14 +227,14 @@ public class DocValuesResource {
             	}
             	while (te.next() != null && --count > 0);
             }
-            
+
             return new AnyDocValuesResponse(type_s, collected);
         }
 	    catch (NumberFormatException e) {
 	        throw new WebApplicationException("Field " + field + " cannot be decoded as " + encoding, Response.Status.BAD_REQUEST);
-	    }    	
+	    }
     }
-    
+
     @Path("/binary")
     @GET
     public List<String> getBinaryDocValues(@QueryParam("segment") Integer segment,
@@ -245,7 +251,9 @@ public class DocValuesResource {
         }
 
         for (int i = 0; i < count && i < maxDoc; i++) {
-            values.add(dv.get(fromDoc + i).utf8ToString());
+        	if (dv.advanceExact(fromDoc + i)) {
+        	    values.add(dv.binaryValue().utf8ToString());
+        	}
         }
 
         return values;
@@ -267,7 +275,9 @@ public class DocValuesResource {
         }
 
         for (int i = 0; i < count && i < maxDoc; i++) {
-            values.add(Long.toString(dv.get(fromDoc + i)));
+        	if (dv.advanceExact(fromDoc + i)) {
+        	    values.add(Long.toString(dv.longValue()));
+        	}
         }
 
         return values;
@@ -289,10 +299,10 @@ public class DocValuesResource {
         }
 
         for (int i = 0; i < count && i < maxDoc; i++) {
-            dv.setDocument(fromDoc + i);
-            List<String> perDocValues = new ArrayList<>(dv.count());
-            for (int index = 0; index < dv.count(); ++index) {
-                perDocValues.add(Long.toString(dv.valueAt(index)));
+            dv.advanceExact(fromDoc + i);
+            List<String> perDocValues = new ArrayList<>(dv.docValueCount());
+            for (int index = 0; index < dv.docValueCount(); ++index) {
+            	perDocValues.add(Long.toString(dv.nextValue()));
             }
             values.add(perDocValues);
         }
@@ -316,7 +326,9 @@ public class DocValuesResource {
         }
 
         for (int i = 0; i < count && i < maxDoc; i++) {
-            values.add(dv.get(fromDoc + i).utf8ToString());
+        	if (dv.advanceExact(fromDoc + i)) {
+        		values.add(dv.binaryValue().utf8ToString());
+        	}
         }
 
         return values;
@@ -338,7 +350,7 @@ public class DocValuesResource {
         }
 
         for (int i = 0; i < count && i < maxDoc; i++) {
-            dv.setDocument(fromDoc + i);
+            dv.advanceExact(fromDoc + i);
             List<String> perDocValues = new ArrayList<String>((int)dv.getValueCount());
             long ord;
             while ((ord = dv.nextOrd()) != SortedSetDocValues.NO_MORE_ORDS) {
@@ -349,10 +361,10 @@ public class DocValuesResource {
 
         return values;
     }
-    
+
     public static Set<Integer> parseDocSet(String docs, int maxDoc) {
     	Set<Integer> docset = new HashSet<>();
-    	
+
     	if (docs == null) {
     		// return default set
     		for (int i = 0; i < 100 && i < maxDoc; i++) {
@@ -386,7 +398,7 @@ public class DocValuesResource {
 					    			}
 			    				}
 			    			}
-		    			} 
+		    			}
 		    			catch (NumberFormatException e) { }
 	    			}
 	    			else if (range_s.length > 2) {
@@ -398,7 +410,7 @@ public class DocValuesResource {
 	    			try {
 	    				int num = Integer.parseInt(chunk);
 	    				if (num < maxDoc) docset.add(num);
-	    			} 
+	    			}
 	    			catch (NumberFormatException e) { }
 	    		}
 	    	}
