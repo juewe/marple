@@ -3,7 +3,7 @@ import { MARPLE_BASE } from 'config';
 
 
 export function makeQueryStr(params) {
-  const filt = k => params[k] || params[k] === 0;   // allows 0s into params
+  const filt = k => params[k] || (k === "docidPrefix" && params[k] === "") || params[k] === 0;   // allows 0s into params
   return Object.keys(params).filter(filt).map(
       k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])
   ).join('&');
@@ -161,11 +161,11 @@ export function setFieldEncoding(indexpath, field, item, encoding) {
   store.set('marple', local);
 }
 
-export function loadPostings(segment, field, term, encoding,
+export function loadPostings(segment, field, term, encoding, docidPrefix,
                              offset, count, onSuccess, onError) {
     term = encodeURIComponent(term);
 	const url = MARPLE_BASE + `/api/postings/${field}/${term}?` +
-        makeQueryStr({ segment, encoding, offset, count: count + 1 });
+        makeQueryStr({ segment, encoding, docidPrefix, offset, count: count + 1 });
 
 	fetch(url)
 	.then(response => response.json())

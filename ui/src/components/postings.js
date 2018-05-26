@@ -1,5 +1,5 @@
 import React, { PropTypes } from 'react';
-import { Button } from 'react-bootstrap';
+import { Button, FormGroup, FormControl, Form } from 'react-bootstrap';
 import { loadPostings } from '../data';
 import PostingItem from './postingitem';
 
@@ -9,14 +9,15 @@ const FETCH_COUNT = 50;
 class Postings extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { postings: [] };
+        this.state = { postings: [], docidPrefix: "" };
         this.componentDidMount = this.componentDidMount.bind(this);
         this.loadMore = this.loadMore.bind(this);
+        this.setDocidPrefix = this.setDocidPrefix.bind(this);
     }
 
     componentDidMount() {
         const p = this.props;
-        loadPostings(p.segment, p.field, p.term, p.encoding, 0, FETCH_COUNT,
+        loadPostings(p.segment, p.field, p.term, p.encoding, "", 0, FETCH_COUNT,
             data => {
 	            this.setState(data);
 	        },
@@ -35,7 +36,7 @@ class Postings extends React.Component {
         const p = this.props;
         const s = this.state;
 
-        loadPostings(p.segment, p.field, p.term, p.encoding, s.moreFrom, FETCH_COUNT,
+        loadPostings(p.segment, p.field, p.term, p.encoding, "", s.moreFrom, FETCH_COUNT,
             data => {
                 this.setState({
                     postings: this.state.postings.concat(data.postings),
@@ -50,6 +51,24 @@ class Postings extends React.Component {
                     this.props.showAlert(errmsg, true);
                 }
             }
+        );
+    }
+
+    setDocidPrefix(docidPrefix) {
+        console.log("docid " + docidPrefix);
+        const p = this.props;
+        loadPostings(p.segment, p.field, p.term, p.encoding, docidPrefix, 0, FETCH_COUNT,
+            data => {
+	            this.setState({ postings: data.postings, docidPrefix: docidPrefix });
+	        },
+	        errmsg => {
+                if (errmsg.includes('No term')) {
+                    this.setState({ postings: [] });
+                }
+                else {
+                    this.props.showAlert(errmsg, true);
+                }
+	        }
         );
     }
 
@@ -73,6 +92,14 @@ class Postings extends React.Component {
         );
         return <div>
             <div style={{ color: 'grey' }}>in docs:</div>
+            <Form inline>
+                <FormGroup>
+                    <FormControl type="text" value={s.docidPrefix}
+                                             placeholder={'Filter by prefix'}
+                                             onChange={ e => this.setDocidPrefix(e.target.value) }
+                                             style={{width:'90%'}} />
+                </FormGroup>
+            </Form>
             {postingList}
             {moreFromLink}
         </div>;

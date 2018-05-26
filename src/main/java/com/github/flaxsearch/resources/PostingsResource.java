@@ -18,9 +18,12 @@ package com.github.flaxsearch.resources;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.github.flaxsearch.util.BytesRefUtils;
 import com.github.flaxsearch.util.ReaderManager;
+import com.google.common.primitives.Ints;
 import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.util.Bits;
@@ -41,6 +44,7 @@ public class PostingsResource {
                                 @PathParam("field") String field,
                                 @PathParam("term") String term,
                                 @QueryParam("encoding") String encoding,
+                                @QueryParam("docidPrefix") String docidPrefix,
                                 @QueryParam("offset") @DefaultValue("0") int offset,
                                 @QueryParam("count") @DefaultValue("1000000") int count) throws IOException {
 
@@ -56,17 +60,17 @@ public class PostingsResource {
         	return new int[0];
         }
         
-        int[] postings = new int[size];
+        List<Integer> postings = new ArrayList<>();
         int docId;
         int i = 0;
         while ((docId = pe.nextDoc()) != PostingsEnum.NO_MORE_DOCS && i < (offset + count)) {
             if (liveDocs != null && liveDocs.get(docId) == false) continue;
-            if (i >= offset) {
-            	postings[i - offset] = docId;
+            if (i >= offset && Integer.toString(docId).startsWith(docidPrefix)) {
+            	postings.add(docId);
             }
             i++;
         }
-        return postings;
+        return Ints.toArray(postings);
     }
 
 }
