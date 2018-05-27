@@ -60,6 +60,7 @@ public class MarpleApplication extends Application<MarpleConfiguration> {
         environment.jersey().register(new PointsResource(df));
         environment.jersey().register(new IndexResource(marpleConfiguration.getIndexPath(), df));
         environment.jersey().register(new DocValuesResource(df));
+        environment.jersey().register(new UninvertResource(df));
 
         environment.healthChecks().register("index", new IndexCheck(df));
     }

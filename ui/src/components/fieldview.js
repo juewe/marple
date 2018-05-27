@@ -4,6 +4,7 @@ import { Nav, NavItem, Col, FormControl } from 'react-bootstrap';
 import Terms from './terms';
 import DocValues from './docvalues';
 import Points from './points';
+import Uninvert from './uninvert';
 
 import { loadFieldsData } from '../data';
 
@@ -140,6 +141,8 @@ class FieldView extends React.Component {
             : s.activePanel == "points" ?
                 <Points segment={p.segment} field={s.selectedField}
                         showAlert={p.showAlert} />
+            : s.activePanel == "uninvert" ?
+                <Uninvert segment={p.segment} field={s.selectedField} />
             : <div></div>;
 
             return <div>
@@ -148,6 +151,7 @@ class FieldView extends React.Component {
                     <NavItem eventKey="terms">Terms</NavItem>
                     <NavItem eventKey="docvalues">Doc values</NavItem>
                     <NavItem eventKey="points">Points</NavItem>
+                    <NavItem eventKey="uninvert">Uninvert</NavItem>
                 </Nav>
                 { panel }
             </div>;

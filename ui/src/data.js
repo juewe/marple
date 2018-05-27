@@ -24,6 +24,14 @@ export function loadFieldsData(segment, onSuccess, onError) {
   .catch(error => { onError('error loading fields data: ' + error); });
 }
 
+export function loadUninvertFieldsData(segment, field, docidPrefix, onSuccess, onError) {
+  const url = MARPLE_BASE + "/api/uninvert?" + makeQueryStr({ segment, field, docidPrefix });
+  fetch(url)
+  .then(response => response.json())
+  .then(data => { onSuccess(data); })
+  .catch(error => { onError('error loading fields data: ' + error); });
+}
+
 export function loadDocument(segment, docid, maxFields, maxFieldLength,
                              onSuccess, onError) {
     const url = MARPLE_BASE + "/api/document/" + docid + "?"
