@@ -28,7 +28,7 @@ class Uninvert extends React.Component {
             this.setState({ postingUninvertList: data, docidPrefix: docidFilter });
         };
 
-        loadUninvertFieldsData(this.props.segment, this.props.field, this.state.docidPrefix, onSuccess, this.onError);
+        loadUninvertFieldsData(this.props.segment, this.props.field, docidFilter, onSuccess, this.onError);
     }
 
     setDocidFilter(docidFilter) {
