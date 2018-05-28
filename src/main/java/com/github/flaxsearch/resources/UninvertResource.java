@@ -76,10 +76,17 @@ public class UninvertResource {
                 // term at the same position, use "|" to merge with other terms at the position
                 sb.append('|');
             } else if (lastPosition != -1) {
-                for (int i = 1; i < position.pos - lastPosition; ++i) {
-                    sb.append('!');
-                }
                 sb.append(' ');
+                if (position.pos - lastPosition > 6) {
+                    sb.append('(');
+                    sb.append(Integer.valueOf(position.pos - lastPosition - 1));
+                    sb.append(".) ");
+                } else if (position.pos - lastPosition > 1){
+                    for (int i = 1; i < position.pos - lastPosition; ++i) {
+                        sb.append('.');
+                    }
+                    sb.append(' ');
+                }
             }
             sb.append(position.term);
             lastPosition = position.pos;
