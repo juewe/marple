@@ -8,6 +8,11 @@ const TERMSLISTSTYLE = {
     marginLeft: '15px'
 };
 
+const LABELSTYLE = {
+    width:'140px',
+    color: 'gray'
+};
+
 class Uninvert extends React.Component {
     constructor(props) {
         super(props);
@@ -42,7 +47,10 @@ class Uninvert extends React.Component {
         console.log(s);
 
         const postingUninvertList = s.postingUninvertList.map(data =>
-            <div>{data.docid}: {data.text}</div>
+            <div>
+                <span style={LABELSTYLE}>{data.docid}: </span>
+                <div>{data.text}</div>
+            </div>
         );
 
         return <div>
