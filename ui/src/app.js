@@ -26,6 +26,7 @@ class MarpleContent extends React.Component {
   componentDidMount() {
     setEndpoint(this.state.endpoint);
     loadIndexData(data => {
+      this.dismissAlert();
       this.setState({ indexData: data });
     }, errorMsg => this.showAlert(errorMsg, true))
   }
@@ -34,6 +35,7 @@ class MarpleContent extends React.Component {
     setEndpoint(e.target.value);
     this.setState({ endpoint: e.target.value });
     loadIndexData(data => {
+      this.dismissAlert();
       this.setState({ indexData: data });
     }, errorMsg => this.showAlert(errorMsg, true))
   }
@@ -44,6 +46,7 @@ class MarpleContent extends React.Component {
 
   showAlert(message, isError) {
     this.setState({
+      indexData: { indexpath: "loading", generation: -1, segments: []},
       alertMessage: message,
       alertLevel: isError ? 'danger' : 'warning'
     })
