@@ -1,6 +1,11 @@
 import store from 'store';
-import { MARPLE_BASE } from 'config';
+// import { MARPLE_BASE } from 'config';
 
+var MARPLE_BASE = "http://localhost:8080";
+
+export function setEndpoint(endpoint) {
+  MARPLE_BASE = endpoint;
+}
 
 export function makeQueryStr(params) {
   const filt = k => params[k] || (k === "docidPrefix" && params[k] === "") || params[k] === 0;   // allows 0s into params
