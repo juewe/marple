@@ -4,6 +4,7 @@ import com.github.flaxsearch.api.UninvertData;
 import com.github.flaxsearch.util.ReaderManager;
 import jdk.internal.joptsimple.internal.Strings;
 import org.apache.lucene.index.PostingsEnum;
+import org.apache.lucene.index.ReaderUtil;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.util.BytesRef;
@@ -45,13 +46,17 @@ public class UninvertResource {
         if (docidPrefix == null || docidPrefix.isEmpty()) {
             return new ArrayList<>();
         }
+        Integer docid = Integer.parseInt(docidPrefix);
+        if (segment == null) {
+            segment = ReaderUtil.subIndex(docid, readerManager.getIndexReader().leaves());
+        }
         Terms terms = readerManager.terms(segment, field);
 
         if (terms == null)
             throw new WebApplicationException("No such field " + field, Response.Status.NOT_FOUND);
 
         List<Position> positions = new ArrayList<>();
-        Integer docid = Integer.parseInt(docidPrefix);
+
         TermsEnum te = terms.iterator();
         BytesRef term;
         PostingsEnum pe = null;
